@@ -18,9 +18,13 @@ class Hashtab:
 
     def convertSmart(self, word, sz):
         GOLDEN_RATIO = 0x9E3779B9
+        GoldnPig = 31
         key = 0
         for i in word:
-            key = key*GOLDEN_RATIO+(ord(i)-self.change)
+            if self.depth == 0:
+                key = key*GOLDEN_RATIO+(ord(i)-self.change)
+            else:
+                key = key*GoldnPig+(ord(i))
         # Golden ratio constant (2^32 * (sqrt(5) - 1) / 2)
         return key % sz
 
@@ -42,15 +46,13 @@ class Hashtab:
             chicken = Hashtab(self.depth + 1, self.otherSizeConstant, self.otherSizeConstant, self.change)
             chicken.tracker+=2
             self.size+=self.otherSizeConstant
-            chicken.add_to_chicken(bucket.word,self.convertSmart(bucket.word,self.otherSizeConstant))
-            chicken.add_to_chicken(word,self.convertSmart(word,self.otherSizeConstant))
+            chicken.add_to_chicken(bucket.word)
+            chicken.add_to_chicken(word)
             self.arrayThing[key]=chicken
             self.collisions+=1
         else:
-            piggy = self.convertSmart(word,self.otherSizeConstant)
+            piggy = bucket.convertSmart(word, self.otherSizeConstant)
             thang = bucket.arrayThing[piggy]
-            if type(thang) == Hashtab:
-                thang.add_to_chicken(word,piggy)
             while thang != None:
                 if thang.word == word:
                     thang.times += 1
@@ -71,21 +73,22 @@ class Hashtab:
                     self.size-=1
                     i.arrayThing.pop()
 
-    def search_for_chicken(self, word, key=-1):
+    def search_for_chicken(self, word, key=-1, que = 0):
         word = word.lower()
         if key == -1:
             key=self.convertSmart(word, self.bucket_size)
-
         bucket = self.arrayThing[key]
         lookUpTime = 1
         if type(bucket) == Hashtab:
             lookUpTime+=1
-            key = self.convertSmart(word,self.otherSizeConstant)
+            key = bucket.convertSmart(word,self.otherSizeConstant)
             thang = bucket.arrayThing[key]
             while thang.word != word:
                 lookUpTime+=1
                 key-=1
                 thang = bucket.arrayThing[key]
+            if lookUpTime>=3 and que >= 1:
+                print('chicken')
             return thang.times,lookUpTime
         else:
             return bucket.times,lookUpTime
@@ -145,5 +148,5 @@ def words_in(word_list):
     return hashBrown.size, hashBrown.collisions, hashBrown
 
 def lookup_word_count(word,hashTable):
-    times,lookups = hashTable.search_for_chicken(word)
+    times,lookups = hashTable.search_for_chicken(word,-1,1)
     return times,lookups
