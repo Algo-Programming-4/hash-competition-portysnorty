@@ -17,12 +17,12 @@ class Hashtab:
         self.change = change
 
     def convertSmart(self, word, sz):
-        GOLDEN_RATIO = 0x9E3779B9
+        GOLDEN_RATIO = 0x9E3779B9+self.change
         GoldnPig = 31
         key = 0
         for i in word:
             if self.depth == 0:
-                key = key*GOLDEN_RATIO+(ord(i)-self.change)
+                key = key*GOLDEN_RATIO+(ord(i))
             else:
                 key = key*GoldnPig+(ord(i))
         # Golden ratio constant (2^32 * (sqrt(5) - 1) / 2)
@@ -73,7 +73,7 @@ class Hashtab:
                     self.size-=1
                     i.arrayThing.pop()
 
-    def search_for_chicken(self, word, key=-1, que = 0):
+    def search_for_chicken(self, word, key=-1):
         word = word.lower()
         if key == -1:
             key=self.convertSmart(word, self.bucket_size)
@@ -87,8 +87,6 @@ class Hashtab:
                 lookUpTime+=1
                 key-=1
                 thang = bucket.arrayThing[key]
-            if lookUpTime>=3 and que >= 1:
-                print('chicken')
             return thang.times,lookUpTime
         else:
             return bucket.times,lookUpTime
@@ -105,16 +103,18 @@ def test(word_list,besT,t,x,change=0):
         for i in word_list:
             hashBrown.add_to_chicken(i)
 
-        totallookUpTimeNew = 0
         hashBrown.cull()
+        totallookUpTimeNew = 0
+        sumd = 0
         for i in word_list:
-            rubish,sumd = hashBrown.search_for_chicken(i)
-        totallookUpTimeNew+=sumd
+            _,sumd = hashBrown.search_for_chicken(i)
+            totallookUpTimeNew+=sumd
 
         something = totallookUpTimeNew+hashBrown.size+hashBrown.collisions
         if besT[1] == 0:
             besT = (t,something,x,change)
         elif something < besT[1]:
+            print(totallookUpTimeNew,hashBrown.size,hashBrown.collisions)
             besT = (t,something,x,change)
 
         del hashBrown
@@ -126,27 +126,18 @@ def test(word_list,besT,t,x,change=0):
 def words_in(word_list):
     besT = (0,0,0,0)
     for x in range(3,5):
-        for i in range(-10,10):
-            for t in range(len(word_list)//2,len(word_list)):
+        for i in range(-64,65):
+            for t in range(len(word_list)//2,len(word_list)+10):
                 besT = test(word_list, besT, t, x, i)
+    print(besT)
     hashBrown = Hashtab(0,besT[0],besT[2],besT[3])
 
     for i in word_list:
         hashBrown.add_to_chicken(i)
 
     hashBrown.cull()
-
-    sumed0 = 0
-    sumed1 = 0
-    for i in hashBrown.arrayThing:
-        if i == None:
-            sumed0+=1
-        elif type(i) == Hashtab:
-            for x in i.arrayThing:
-                if x == None:
-                    sumed1+=1
     return hashBrown.size, hashBrown.collisions, hashBrown
 
 def lookup_word_count(word,hashTable):
-    times,lookups = hashTable.search_for_chicken(word,-1,1)
+    times,lookups = hashTable.search_for_chicken(word,-1)
     return times,lookups
