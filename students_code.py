@@ -18,11 +18,11 @@ class Hashtab:
 
     def convertSmart(self, word, sz):
         GOLDEN_RATIO = 2654435761+self.change
-        GoldnPig = 31
+        GoldnPig = 0x9E3779B9
         key = 0
         for i in word:
             if self.depth == 0:
-                key = key*GOLDEN_RATIO+(ord(i)) & 0xFFFFFFFF
+                key = ((key*GOLDEN_RATIO)+key)+(ord(i)) & 0xFFFFFFFF
             else:
                 key = key*GoldnPig+(ord(i))
         # Golden ratio constant (2^32 * (sqrt(5) - 1) / 2)
@@ -73,7 +73,7 @@ class Hashtab:
                     self.size-=1
                     i.arrayThing.pop()
 
-    def search_for_chicken(self, word, key=-1):
+    def search_for_chicken(self, word, key=-1, r=0):
         word = word.lower()
         if key == -1:
             key=self.convertSmart(word, self.bucket_size)
@@ -87,6 +87,8 @@ class Hashtab:
                 lookUpTime+=1
                 key-=1
                 thang = bucket.arrayThing[key]
+                if bucket.depth>=1 and r>=1:
+                    print('chicken')
             return thang.times,lookUpTime
         else:
             return bucket.times,lookUpTime
@@ -126,9 +128,10 @@ def test(word_list,besT,t,x,change=0):
 
 def words_in(word_list):
     besT = (0,0,0,0)
+    pigsBlood = set(word_list)
     for x in range(3,5):
-        for i in range(-100,101):
-            for t in range(len(word_list)//2,len(word_list)+10):
+        for i in range(0,100):
+            for t in range(len(pigsBlood),len(word_list)):
                 besT = test(word_list, besT, t, x, i)
     print(besT)
     hashBrown = Hashtab(0,besT[0],besT[2],besT[3])
@@ -140,5 +143,5 @@ def words_in(word_list):
     return hashBrown.size, hashBrown.collisions, hashBrown
 
 def lookup_word_count(word,hashTable):
-    times,lookups = hashTable.search_for_chicken(word,-1)
+    times,lookups = hashTable.search_for_chicken(word,-1,1)
     return times,lookups 
