@@ -17,12 +17,12 @@ class Hashtab:
         self.change = change
 
     def convertSmart(self, word, sz):
-        GOLDEN_RATIO = 0x9E3779B9+self.change
+        GOLDEN_RATIO = 2654435761+self.change
         GoldnPig = 31
         key = 0
         for i in word:
             if self.depth == 0:
-                key = key*GOLDEN_RATIO+(ord(i))
+                key = key*GOLDEN_RATIO+(ord(i)) & 0xFFFFFFFF
             else:
                 key = key*GoldnPig+(ord(i))
         # Golden ratio constant (2^32 * (sqrt(5) - 1) / 2)
@@ -104,9 +104,9 @@ def test(word_list,besT,t,x,change=0):
             hashBrown.add_to_chicken(i)
 
         hashBrown.cull()
-        word_list = set(word_list)
         totallookUpTimeNew = 0
         sumd = 0
+        word_list = set(word_list)
         for i in word_list:
             _,sumd = hashBrown.search_for_chicken(i)
             totallookUpTimeNew+=sumd
@@ -127,7 +127,7 @@ def test(word_list,besT,t,x,change=0):
 def words_in(word_list):
     besT = (0,0,0,0)
     for x in range(3,5):
-        for i in range(-64,65):
+        for i in range(-100,101):
             for t in range(len(word_list)//2,len(word_list)+10):
                 besT = test(word_list, besT, t, x, i)
     print(besT)
@@ -141,4 +141,4 @@ def words_in(word_list):
 
 def lookup_word_count(word,hashTable):
     times,lookups = hashTable.search_for_chicken(word,-1)
-    return times,lookups
+    return times,lookups 
