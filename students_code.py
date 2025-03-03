@@ -1,147 +1,49 @@
-class Node:
-    def __init__(self, word, times=1):
-        self.word = word
-        self.times = times
-    def __contains__(self, item):
-        return item == self.word
+import string
+import sys
+from students_code import words_in, lookup_word_count
 
-class Hashtab:
-    def __init__(self, depth=0, bucketsize = 100, otherSizeConstant = 5, change = 0):
-        self.size = bucketsize
-        self.bucket_size = bucketsize
-        self.arrayThing = [None] * self.bucket_size
-        self.collisions = 0
-        self.depth = depth
-        self.otherSizeConstant = otherSizeConstant
-        self.tracker = 0
-        self.change = change
+# Read and process text file
+def process_text_file(filename):
+    with open(filename, 'r', encoding='utf-8') as file:
+        text = file.read()
+    
+    # Convert to lowercase and remove punctuation
+    translator = str.maketrans('', '', string.punctuation)
+    words = text.translate(translator).lower().split()
+    
+    return words
 
-    def convertSmart(self, word, sz):
-        GOLDEN_RATIO = 2654435761+self.change
-        GoldnPig = 0x9E3779B9
-        key = 0
-        for i in word:
-            if self.depth == 0:
-                key = ((key*GOLDEN_RATIO)+key)+(ord(i)) & 0xFFFFFFFF
-            else:
-                key = key*GoldnPig+(ord(i))
-        # Golden ratio constant (2^32 * (sqrt(5) - 1) / 2)
-        return key % sz
+# Main function to run the simulation
+def main():
+    # Read and process the input file
+    #filename = input("enter a file name")  # Change this to your text file name
+    words_list = process_text_file("Alice.txt")
+    print(len(words_list))
+    unique_words = set(words_list)
+    print(len(unique_words))
+    # Run students' words_in function
+    num_buckets, collisions, hashyboi = words_in(words_list)
+    print(f"Number of Buckets Used: {num_buckets}")
+    print(f"Collisions: {collisions}")
 
-    def add_to_chicken(self, word, key=-1):
-        word = word.lower()
-        if key == -1:
-            key = self.convertSmart(word, self.bucket_size)
-        nd = Node(word)
-        bucket = self.arrayThing[key]
-        if bucket == None:
-            self.arrayThing[key] = nd
-            return
-        elif self.depth>=1:
-            bucket = self
-        if type(bucket) == Node:
-            if bucket.word == word:
-                bucket.times += 1
-                return
-            chicken = Hashtab(self.depth + 1, self.otherSizeConstant, self.otherSizeConstant, self.change)
-            chicken.tracker+=2
-            self.size+=self.otherSizeConstant
-            chicken.add_to_chicken(bucket.word)
-            chicken.add_to_chicken(word)
-            self.arrayThing[key]=chicken
-            self.collisions+=1
-        else:
-            piggy = bucket.convertSmart(word, self.otherSizeConstant)
-            thang = bucket.arrayThing[piggy]
-            while thang != None:
-                if thang.word == word:
-                    thang.times += 1
-                    return
-                piggy-=1
-                thang = bucket.arrayThing[piggy]
-            bucket.tracker+=1
-            self.collisions+=1
-            bucket.arrayThing[piggy]=Node(word)
+    # Convert list to a set for unique word lookups
 
-    def cull(self):
-        while self.arrayThing[-1] is None:
-            self.size-=1
-            self.arrayThing.pop()
-        for i in self.arrayThing:
-            if type(i) == Hashtab:
-                while i.arrayThing and i.arrayThing[-1] is None:
-                    self.size-=1
-                    i.arrayThing.pop()
+    # Run students' lookup_word_count function and track lookup score
+    total_lookups = 0
+    for word in unique_words:
+        _, lookups = lookup_word_count(word, hashyboi)
+        total_lookups += lookups
 
-    def search_for_chicken(self, word, key=-1, r=0):
-        word = word.lower()
-        if key == -1:
-            key=self.convertSmart(word, self.bucket_size)
-        bucket = self.arrayThing[key]
-        lookUpTime = 1
-        if type(bucket) == Hashtab:
-            lookUpTime+=1
-            key = bucket.convertSmart(word,self.otherSizeConstant)
-            thang = bucket.arrayThing[key]
-            while thang.word != word:
-                lookUpTime+=1
-                key-=1
-                thang = bucket.arrayThing[key]
-                if bucket.depth>=1 and r>=1:
-                    print('chicken')
-            return thang.times,lookUpTime
-        else:
-            return bucket.times,lookUpTime
+    # Calculate final score
+    total_score = num_buckets + collisions + total_lookups
 
-    def __del__(self):
-        self.arrayThing.clear()
-        self.collisions = 0
-        self.size = 0
+    # Print results
+    print("\n--- Student's Hash Table Score ---")
+    print(f"Buckets Used: {num_buckets}")
+    print(f"Collisions: {collisions}")
+    print(f"Total Lookups: {total_lookups}")
+    print(f"Final Score: {total_score}")
 
-def test(word_list,besT,t,x,change=0):
-    try:
-        hashBrown = Hashtab(0,t,x,change)
+if __name__ == "__main__":
+    main()
 
-        for i in word_list:
-            hashBrown.add_to_chicken(i)
-
-        hashBrown.cull()
-        totallookUpTimeNew = 0
-        sumd = 0
-        word_list = set(word_list)
-        for i in word_list:
-            _,sumd = hashBrown.search_for_chicken(i)
-            totallookUpTimeNew+=sumd
-
-        something = totallookUpTimeNew+hashBrown.size+hashBrown.collisions
-        if besT[1] == 0:
-            besT = (t,something,x,change)
-        elif something < besT[1]:
-            print(totallookUpTimeNew,hashBrown.size,hashBrown.collisions)
-            besT = (t,something,x,change)
-
-        del hashBrown
-        return besT
-
-    except IndexError:
-        return besT
-
-def words_in(word_list):
-    besT = (0,0,0,0)
-    pigsBlood = set(word_list)
-    for x in range(3,5):
-        for i in range(0,100):
-            for t in range(len(pigsBlood),len(word_list)):
-                besT = test(word_list, besT, t, x, i)
-    print(besT)
-    hashBrown = Hashtab(0,besT[0],besT[2],besT[3])
-
-    for i in word_list:
-        hashBrown.add_to_chicken(i)
-
-    hashBrown.cull()
-    return hashBrown.size, hashBrown.collisions, hashBrown
-
-def lookup_word_count(word,hashTable):
-    times,lookups = hashTable.search_for_chicken(word,-1,1)
-    return times,lookups 
