@@ -104,6 +104,7 @@ def test(word_list,besT,t,x,change=0):
             hashBrown.add_to_chicken(i)
 
         hashBrown.cull()
+        word_list = set(word_list)
         totallookUpTimeNew = 0
         sumd = 0
         for i in word_list:
